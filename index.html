@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>IMDA × AI Solutions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
+  <!-- !! FIGMA SYNC — do not remove: enables "Send to Figma" toolbar for re-capture !! -->
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+
+  <style>
+    /* ─── Reset ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ─── Design Tokens ──────────────────────────────── */
+    :root {
+      --accent:         #DB0B5B;
+      --accent-glow:    rgba(219, 11, 91, 0.35);
+      --accent-subtle:  rgba(219, 11, 91, 0.12);
+      --bg:             #0D0D0D;
+      --bg-card:        #141414;
+      --bg-card-hover:  #1A1A1A;
+      --border:         rgba(255, 255, 255, 0.08);
+      --border-accent:  rgba(219, 11, 91, 0.45);
+      --text-primary:   #FFFFFF;
+      --text-dim:       rgba(255, 255, 255, 0.45);
+      --text-sub:       rgba(255, 255, 255, 0.65);
+      --font:           'Inter', system-ui, sans-serif;
+      --radius-card:    20px;
+      --radius-icon:    14px;
+
+      --h-header: 20dvh;
+      --h-cards:  65dvh;
+      --h-footer: 15dvh;
+    }
+
+    /* ─── Base ───────────────────────────────────────── */
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow: hidden;
+    }
+
+    /* ─── Screen Wrapper ────────────────────────────── */
+    .screen {
+      display: flex;
+      flex-direction: column;
+      width: min(100vw, 700px);
+      height: 100dvh;
+      margin-inline: auto;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Subtle radial gradient backdrop */
+    .screen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(219,11,91,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(219,11,91,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .screen > * { position: relative; z-index: 1; }
+
+    /* ─── HEADER ────────────────────────────────────── */
+    .header {
+      flex: 0 0 var(--h-header);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(1rem, 2.5dvh, 2.5rem) clamp(1.5rem, 4dvh, 3rem);
+      text-align: center;
+      gap: 0.5rem;
+    }
+
+    .header-eyebrow {
+      font-size: clamp(0.75rem, 1.6dvh, 1.1rem);
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .header-question {
+      font-size: clamp(2rem, 5dvh, 5rem);
+      font-weight: 700;
+      line-height: 1.12;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    /* ─── CARDS SECTION ────────────────────────────── */
+    .cards {
+      flex: 0 0 var(--h-cards);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(6px, 1dvh, 16px);
+      padding: 0 clamp(1rem, 3dvh, 2.5rem);
+    }
+
+    /* ─── CARD ──────────────────────────────────────── */
+    .card {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: clamp(0.8rem, 2dvh, 2rem) clamp(1rem, 2.5dvh, 2rem);
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      outline: none;
+      transition:
+        transform        180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow       180ms ease,
+        border-color     180ms ease,
+        background-color 180ms ease;
+      text-decoration: none;
+    }
+
+    .card:focus-visible {
+      box-shadow: 0 0 0 3px var(--accent);
+    }
+
+    .card:active,
+    .card.pressed {
+      transform: scale(0.975);
+      background-color: var(--bg-card-hover);
+      border-left-color: var(--accent);
+      border-color: var(--border-accent);
+      box-shadow:
+        0 0 28px var(--accent-glow),
+        inset 0 0 0 1px var(--border-accent);
+    }
+
+    /* Icon slot */
+    .card-icon-wrap {
+      flex-shrink: 0;
+      width: clamp(44px, 6dvh, 72px);
+      height: clamp(44px, 6dvh, 72px);
+      background: var(--accent-subtle);
+      border-radius: var(--radius-icon);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 0 10px var(--accent-glow));
+      transition: filter 180ms ease;
+    }
+
+    .card:active .card-icon-wrap,
+    .card.pressed .card-icon-wrap {
+      filter: drop-shadow(0 0 16px rgba(219,11,91,0.65));
+    }
+
+    .card-icon-wrap svg {
+      width: 55%;
+      height: 55%;
+    }
+
+    /* Text slot */
+    .card-text {
+      flex: 1;
+      margin: 0 clamp(0.8rem, 2dvh, 1.6rem);
+      min-width: 0;
+    }
+
+    .card-label {
+      font-size: clamp(1.1rem, 2.6dvh, 2.2rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    .card-sub {
+      font-size: clamp(0.8rem, 1.7dvh, 1.3rem);
+      font-weight: 400;
+      color: var(--text-sub);
+      margin-top: 0.3em;
+      line-height: 1.4;
+    }
+
+    /* Chevron slot */
+    .card-chevron {
+      flex-shrink: 0;
+      width: clamp(20px, 2.8dvh, 32px);
+      height: clamp(20px, 2.8dvh, 32px);
+      color: var(--text-dim);
+      transition: color 180ms ease, transform 180ms ease;
+    }
+
+    .card:active .card-chevron,
+    .card.pressed .card-chevron {
+      color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    /* ─── FOOTER ────────────────────────────────────── */
+    .footer {
+      flex: 0 0 var(--h-footer);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 clamp(1rem, 4vw, 2rem) clamp(0.5rem, 1.5vh, 1rem);
+      padding-bottom: max(clamp(0.5rem, 1.5vh, 1rem), env(safe-area-inset-bottom, 0px));
+      gap: 0.5rem;
+      text-align: center;
+    }
+
+    /* Safe zone: footer content lives in top 66% of footer zone */
+    .footer-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 5%; /* push content away from bottom 5% dead zone */
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: clamp(0.35rem, 0.8dvh, 0.6rem);
+      font-size: clamp(0.9rem, 1.8dvh, 1.5rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.04em;
+    }
+
+    .footer-logo {
+      width: clamp(32px, 5dvh, 52px);
+      height: clamp(32px, 5dvh, 52px);
+      flex-shrink: 0;
+    }
+
+    .footer-logo svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .footer-sep {
+      opacity: 0.4;
+      font-weight: 400;
+    }
+
+    .footer-brand-dot {
+      display: inline-block;
+      width: clamp(5px, 0.7dvh, 8px);
+      height: clamp(5px, 0.7dvh, 8px);
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    .footer-hint {
+      font-size: clamp(0.75rem, 1.4dvh, 1.1rem);
+      font-weight: 400;
+      color: var(--text-dim);
+      letter-spacing: 0.01em;
+    }
+
+    /* ─── Idle Attract Animation ────────────────────── */
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow: none;
+        border-color: var(--border);
+      }
+      50% {
+        box-shadow: 0 0 32px var(--accent-glow);
+        border-color: var(--border-accent);
+      }
+    }
+
+    .card.attract {
+      animation: pulse-glow 2.4s ease-in-out infinite;
+    }
+
+    /* ─── Divider line in header ────────────────────── */
+    .header-rule {
+      width: clamp(32px, 5vw, 48px);
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px;
+      box-shadow: 0 0 8px var(--accent-glow);
+      margin-top: 0.3rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="screen">
+
+    <!-- ── HEADER ── -->
+    <header class="header">
+      <span class="header-eyebrow">AI Solutions</span>
+      <h1 class="header-question">What do you want<br>to improve?</h1>
+      <div class="header-rule"></div>
+    </header>
+
+    <!-- ── CARDS ── -->
+    <main class="cards">
+
+      <!-- Card 1: Create content faster -->
+      <div
+        class="card"
+        role="button"
+        tabindex="0"
+        data-goal="content"
+        aria-label="Create content faster — Ship campaigns in hours, not weeks"
+      >
+        <div class="card-icon-wrap">
+          <!-- Lightning bolt -->
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Glow layer -->
+            <polygon points="13,2 4,14 11,14 10,22 20,10 13,10" fill="none" stroke="#DB0B5B" stroke-width="4" stroke-linejoin="round" opacity="0.25"/>
+            <!-- Main bolt -->
+            <polygon points="13,2 4,14 11,14 10,22 20,10 13,10" fill="none" stroke="#DB0B5B" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="card-text">
+          <div class="card-label">Create content faster</div>
+          <div class="card-sub">Ship campaigns in hours, not weeks</div>
+        </div>
+        <!-- Chevron -->
+        <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </div>
+
+      <!-- Card 2: Increase engagement -->
+      <div
+        class="card"
+        role="button"
+        tabindex="0"
+        data-goal="engagement"
+        aria-label="Increase engagement — AI that knows what your audience wants"
+      >
+        <div class="card-icon-wrap">
+          <!-- Rising bar chart + arrow -->
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Bars -->
+            <rect x="3" y="14" width="4" height="6" rx="1.5" fill="#DB0B5B" opacity="0.4"/>
+            <rect x="9.5" y="10" width="4" height="10" rx="1.5" fill="#DB0B5B" opacity="0.7"/>
+            <rect x="16" y="6" width="4" height="14" rx="1.5" fill="#DB0B5B"/>
+            <!-- Up arrow on top-right bar -->
+            <polyline points="16,5 18,2 20,5" stroke="#DB0B5B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="18" y1="2" x2="18" y2="6" stroke="#DB0B5B" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="card-text">
+          <div class="card-label">Increase engagement</div>
+          <div class="card-sub">AI that knows what your audience wants</div>
+        </div>
+        <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </div>
+
+      <!-- Card 3: Drive conversions -->
+      <div
+        class="card"
+        role="button"
+        tabindex="0"
+        data-goal="conversions"
+        aria-label="Drive conversions — Turn attention into measurable results"
+      >
+        <div class="card-icon-wrap">
+          <!-- Bullseye / target -->
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Outer ring -->
+            <circle cx="12" cy="12" r="9" stroke="#DB0B5B" stroke-width="1.6" opacity="0.4"/>
+            <!-- Mid ring -->
+            <circle cx="12" cy="12" r="5.5" stroke="#DB0B5B" stroke-width="1.6" opacity="0.7"/>
+            <!-- Bull's-eye -->
+            <circle cx="12" cy="12" r="2.2" fill="#DB0B5B"/>
+            <!-- Arrow pointing in from top-right -->
+            <line x1="19" y1="5" x2="14" y2="10" stroke="#DB0B5B" stroke-width="1.8" stroke-linecap="round"/>
+            <polyline points="16,5 19,5 19,8" stroke="#DB0B5B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="card-text">
+          <div class="card-label">Drive conversions</div>
+          <div class="card-sub">Turn attention into measurable results</div>
+        </div>
+        <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </div>
+
+    </main>
+
+    <!-- ── FOOTER ── -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="footer-logo" aria-label="be logo">
+            <svg preserveAspectRatio="xMidYMid meet" viewBox="0 0 36.3666 38.4" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M34.129 15.032L5.94162 0.454517C5.35794 0.152318 4.73527 0 4.09066 0C1.83513 0 0 1.86925 0 4.16742V34.2326C0 36.5307 1.83513 38.4 4.09187 38.4C4.76207 38.4 5.43227 38.2257 6.0318 37.8967L34.2192 22.409C35.562 21.6706 36.3858 20.2473 36.3663 18.6925C36.3468 17.1388 35.4901 15.7363 34.129 15.032Z" fill="#DB0B5B"/>
+              <path d="M26.373 21.2612C26.1487 21.1576 25.9258 21.0516 25.704 20.9443C25.665 20.9261 25.6504 20.9297 25.6284 20.9687C25.5383 21.1344 25.4542 21.305 25.3482 21.4598C24.8827 22.1385 24.2308 22.5662 23.4606 22.8246C23.1852 22.9172 22.9013 22.9769 22.6125 23.0147C21.9436 23.1024 21.288 23.0585 20.6519 22.8233C20.1523 22.6393 19.727 22.3481 19.4151 21.9094C19.2274 21.6462 19.0909 21.3587 19.0446 21.0345C19.0044 20.7579 19.1372 20.5191 19.3919 20.4228C19.7453 20.2888 20.1011 20.1633 20.4569 20.0353C20.7201 19.9403 20.9858 19.8501 21.2478 19.7502C21.5877 19.6198 21.9277 19.4906 22.2604 19.3444C22.6089 19.1921 22.9549 19.0312 23.2925 18.8545C23.6471 18.6681 23.9724 18.4366 24.2417 18.1344C24.5573 17.781 24.7121 17.3691 24.6938 16.8963C24.6804 16.5417 24.5841 16.2066 24.4367 15.8862C24.2758 15.5352 24.0468 15.2318 23.7543 14.9796C23.34 14.6225 22.8575 14.402 22.3286 14.2813C21.4939 14.09 20.6641 14.1436 19.8379 14.3423C19.4212 14.4422 19.0178 14.5823 18.6267 14.7566C18.1453 14.971 17.6921 15.2306 17.2753 15.5523C16.6612 16.0251 16.1555 16.5856 15.7838 17.2522C15.7204 17.0937 15.6522 16.9366 15.573 16.7842C15.3098 16.281 14.9735 15.8338 14.547 15.4572C14.0352 15.0052 13.4479 14.6908 12.7911 14.5031C12.3061 14.3642 11.8101 14.3118 11.3069 14.3276C10.828 14.3423 10.3576 14.4081 9.89824 14.5446C9.34624 14.7091 8.83323 14.9479 8.40674 15.3488C8.35556 15.3975 8.20202 15.5121 8.05092 15.4597C7.87058 15.3963 7.89861 15.1416 7.89861 15.0576C7.89617 13.6136 7.89861 12.1708 7.89617 10.7268C7.89617 10.6062 7.88642 10.4831 7.86205 10.3662C7.80721 10.1042 7.66343 9.91042 7.399 9.82269C7.18454 9.75201 6.96764 9.76298 6.75074 9.80076C6.36202 9.86778 5.9733 9.94089 5.58459 10.0103C4.82787 10.1456 4.07237 10.2809 3.31566 10.4137C3.26935 10.4222 3.25839 10.4393 3.25839 10.4831C3.25961 10.7134 3.26082 10.945 3.25839 11.1753C3.25839 11.2313 3.27666 11.2399 3.32663 11.2362C3.54474 11.2179 3.76286 11.2191 3.97977 11.263C4.32827 11.3337 4.5671 11.525 4.67434 11.8735C4.74014 12.0855 4.75354 12.3024 4.75354 12.5218C4.75354 14.5056 4.75354 16.4906 4.75354 18.4744C4.75354 20.4581 4.75354 22.5699 4.75354 24.6183C4.75354 24.656 4.75354 24.6938 4.75598 24.7316C4.77669 25.0374 5.01675 25.2336 5.31773 25.1861C5.46395 25.1629 5.58946 25.0911 5.69426 24.9924C5.86364 24.8339 6.02692 24.6682 6.18777 24.5001C6.34374 24.338 6.50459 24.182 6.70565 24.0736C6.85553 23.9931 7.01394 23.9639 7.18332 23.9883C7.38803 24.0175 7.57935 24.0918 7.76457 24.1771C8.10454 24.3319 8.43842 24.4988 8.77839 24.6536C9.39863 24.9363 10.0445 25.1288 10.7293 25.1776C11.2594 25.2153 11.7821 25.1739 12.2963 25.0472C13.0652 24.8571 13.7525 24.5098 14.3557 23.9931C14.9491 23.485 15.389 22.8696 15.6985 22.1629C15.8362 22.4785 15.9873 22.7575 16.1664 23.022C16.6465 23.7312 17.268 24.2795 18.0393 24.6573C18.6718 24.9668 19.3407 25.13 20.0402 25.1788C20.6909 25.2251 21.3331 25.1654 21.9679 25.0204C22.409 24.9205 22.8392 24.784 23.2523 24.6C23.8396 24.3392 24.3843 24.0078 24.8729 23.5874C25.3798 23.1499 25.8136 22.6515 26.128 22.0569C26.2499 21.8278 26.3486 21.589 26.4046 21.3355C26.412 21.305 26.4156 21.2831 26.3766 21.2648L26.373 21.2612ZM12.8032 22.3042C12.6777 22.6942 12.4962 23.0585 12.1964 23.3632C11.9186 23.6471 11.5762 23.8384 11.1643 23.8896C10.2138 24.0078 9.40716 23.7287 8.75037 23.089C8.34216 22.6917 8.11916 22.2031 7.99609 21.673C7.91688 21.3294 7.91445 20.9809 7.89251 20.6312C7.86327 20.1596 7.89251 19.0946 7.91079 18.7339C7.94004 18.1831 8.04727 17.6457 8.32144 17.1486C8.6078 16.6319 9.04038 16.2724 9.66306 16.1457C10.382 15.9983 11.0364 16.1262 11.6054 16.5759C11.9966 16.8854 12.2683 17.2741 12.4767 17.7042C12.7228 18.2112 12.8678 18.7437 12.9531 19.292C13.0116 19.671 13.0433 20.0512 13.0433 20.4338C13.0433 21.065 12.9982 21.6925 12.8008 22.303L12.8032 22.3042ZM18.7522 19.6247C18.5743 19.5735 18.4622 19.4468 18.383 19.2908C18.3099 19.1458 18.2124 18.9033 18.149 18.6645C18.0259 18.2258 17.9906 17.7554 18.0552 17.1998C18.1051 16.7794 18.2392 16.3919 18.5109 16.0592C18.7108 15.8155 18.963 15.6437 19.2542 15.5291C19.5418 15.4158 19.8391 15.3537 20.1523 15.3902C20.5776 15.4402 20.9212 15.6437 21.2015 15.9593C21.4293 16.2164 21.595 16.5101 21.7181 16.8305C21.8095 17.0682 21.8814 17.3119 21.9107 17.5665C21.9582 17.9735 21.8107 18.2977 21.4976 18.5523C21.2539 18.751 20.9785 18.8972 20.6885 19.0142C20.2278 19.2006 19.777 19.4017 19.3042 19.565C19.1263 19.6344 18.9301 19.6734 18.751 19.6259L18.7522 19.6247Z" fill="white"/>
+            </svg>
+          </div>
+          <span class="footer-sep">×</span>
+          AI Solutions
+          <span class="footer-brand-dot"></span>
+        </div>
+        <p class="footer-hint">Tap a goal to see our AI solutions.</p>
+      </div>
+    </footer>
+
+  </div><!-- /.screen -->
+
+  <script>
+    (function () {
+      'use strict';
+
+      const cards = document.querySelectorAll('.card');
+      let idleTimer = null;
+      let attractActive = false;
+
+      /* ── Card interaction ── */
+      cards.forEach(function (card) {
+        // Touch / pointer handler
+        card.addEventListener('pointerup', function (e) {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          navigate(card.dataset.goal);
+        });
+
+        // Keyboard handler
+        card.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            navigate(card.dataset.goal);
+          }
+        });
+      });
+
+      function navigate(goal) {
+        if (goal === 'engagement') {
+          window.location.href = 'screen2.html';
+          return;
+        }
+
+        console.log('[kiosk] selected goal:', goal);
+        // TODO: wire remaining goals to their screens
+        // window.location.href = 'screen3.html?goal=' + encodeURIComponent(goal);
+
+        // Visual feedback for unimplemented goals
+        const card = document.querySelector('[data-goal="' + goal + '"]');
+        if (card) {
+          card.classList.add('pressed');
+          setTimeout(function () { card.classList.remove('pressed'); }, 350);
+        }
+      }
+
+      /* ── Idle attract loop ── */
+      function startAttract() {
+        if (attractActive) return;
+        attractActive = true;
+        cards.forEach(function (card, i) {
+          card.style.animationDelay = (i * 0.8) + 's';
+          card.classList.add('attract');
+        });
+      }
+
+      function stopAttract() {
+        if (!attractActive) return;
+        attractActive = false;
+        cards.forEach(function (card) {
+          card.style.animationDelay = '';
+          card.classList.remove('attract');
+        });
+      }
+
+      function resetIdleTimer() {
+        stopAttract();
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(startAttract, 30000); // 30 seconds
+      }
+
+      document.addEventListener('pointerdown', resetIdleTimer);
+      document.addEventListener('keydown', resetIdleTimer);
+
+      resetIdleTimer(); // kick off on load
+    })();
+  </script>
+</body>
+</html>
