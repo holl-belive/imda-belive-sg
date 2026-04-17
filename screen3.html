@@ -320,6 +320,104 @@
       cursor: default;
       pointer-events: none;
     }
+
+    /* ── Aspect Ratio Dropdown ── */
+    .ar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 99;
+    }
+
+    .ar-backdrop.open {
+      display: block;
+    }
+
+    .ar-dropdown {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 10px);
+      right: 0;
+      background: #fff;
+      border-radius: clamp(20px, 3.5dvh, 36px);
+      box-shadow: 0 24px 72px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      padding: clamp(14px, 2.5dvh, 24px) clamp(24px, 4.5dvh, 48px);
+      min-width: clamp(240px, 42vw, 420px);
+      z-index: 100;
+    }
+
+    .ar-dropdown.open {
+      display: block;
+    }
+
+    .ar-dropdown-title {
+      font-size: clamp(1rem, 2.4dvh, 1.8rem);
+      font-weight: 400;
+      color: var(--text-mid);
+      margin-bottom: clamp(10px, 2dvh, 20px);
+      white-space: nowrap;
+    }
+
+    .ar-options {
+      display: flex;
+      gap: clamp(16px, 3dvh, 30px);
+    }
+
+    .ar-option {
+      flex: 1;
+      background: var(--purple-bg);
+      border: 3px solid transparent;
+      border-radius: clamp(8px, 1.5dvh, 12px);
+      padding: clamp(10px, 1.8dvh, 18px) clamp(8px, 1.5dvh, 14px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(6px, 1dvh, 10px);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 150ms ease, background 150ms ease;
+    }
+
+    .ar-option.selected {
+      border-color: #381469;
+    }
+
+    .ar-icon-wrap {
+      position: relative;
+      overflow: hidden;
+      width: clamp(28px, 4.5dvh, 48px);
+      height: clamp(28px, 4.5dvh, 48px);
+      flex-shrink: 0;
+    }
+
+    .ar-icon-inner {
+      position: absolute;
+    }
+
+    .ar-icon-inner img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* landscape: 16:9 — letterbox inset top/bottom */
+    .ar-icon-landscape {
+      top: 12.5%; bottom: 12.5%; left: 0; right: 0;
+    }
+
+    /* portrait: 9:16 — pillarbox inset left/right */
+    .ar-icon-portrait {
+      top: 0; bottom: 0; left: 12.5%; right: 12.5%;
+    }
+
+    .ar-option span {
+      font-size: clamp(0.85rem, 1.8dvh, 1.4rem);
+      font-weight: 600;
+      color: var(--text-dark);
+    }
   </style>
 </head>
 
@@ -379,10 +477,37 @@
           </button>
           <!-- Right actions -->
           <div class="prompt-right-actions">
-            <button class="btn-action" aria-label="Aspect ratio 16:9">
-              <img src="https://www.figma.com/api/mcp/asset/5a036900-c76e-465d-8d7a-8dcbbe831aa4" alt="" aria-hidden="true" />
-              <span>(16:9)</span>
-            </button>
+            <!-- Aspect ratio button + dropdown -->
+            <div style="position:relative;">
+              <button class="btn-action" id="btn-ar" aria-label="Aspect ratio 16:9" aria-haspopup="true" aria-expanded="false">
+                <img src="https://www.figma.com/api/mcp/asset/5a036900-c76e-465d-8d7a-8dcbbe831aa4" alt="" aria-hidden="true" />
+                <span id="ar-label">(16:9)</span>
+              </button>
+              <!-- Transparent backdrop to catch outside taps -->
+              <div class="ar-backdrop" id="ar-backdrop"></div>
+              <!-- Dropdown card, positioned above the button -->
+              <div class="ar-dropdown" id="ar-dropdown" role="dialog" aria-label="Select aspect ratio">
+                <p class="ar-dropdown-title">(Default: 16:9)</p>
+                <div class="ar-options">
+                  <button class="ar-option selected" data-ratio="16:9" role="menuitem">
+                    <div class="ar-icon-wrap">
+                      <div class="ar-icon-inner ar-icon-landscape">
+                        <img src="https://www.figma.com/api/mcp/asset/2d438c27-df72-42da-935a-8b22fb86a904" alt="" aria-hidden="true" />
+                      </div>
+                    </div>
+                    <span>16:9</span>
+                  </button>
+                  <button class="ar-option" data-ratio="9:16" role="menuitem">
+                    <div class="ar-icon-wrap">
+                      <div class="ar-icon-inner ar-icon-portrait">
+                        <img src="https://www.figma.com/api/mcp/asset/e785d894-a1ff-4ec9-b6c2-1621f7d32343" alt="" aria-hidden="true" />
+                      </div>
+                    </div>
+                    <span>9:16</span>
+                  </button>
+                </div>
+              </div>
+            </div>
             <button class="btn-action" aria-label="Styles">
               <img src="https://www.figma.com/api/mcp/asset/95cf1d35-a74a-4033-90b8-baceab107ec2" alt="" aria-hidden="true" />
               <span>Styles</span>
@@ -478,6 +603,44 @@
             bottomPanel.style.marginBottom = '';
           }
         }, 100);
+      });
+
+      /* ── Aspect Ratio dropdown ── */
+      var arBtn      = document.getElementById('btn-ar');
+      var arBackdrop = document.getElementById('ar-backdrop');
+      var arDropdown = document.getElementById('ar-dropdown');
+      var arLabel    = document.getElementById('ar-label');
+      var arOptions  = document.querySelectorAll('.ar-option');
+
+      function openAr() {
+        arDropdown.classList.add('open');
+        arBackdrop.classList.add('open');
+        arBtn.setAttribute('aria-expanded', 'true');
+      }
+
+      function closeAr() {
+        arDropdown.classList.remove('open');
+        arBackdrop.classList.remove('open');
+        arBtn.setAttribute('aria-expanded', 'false');
+      }
+
+      arBtn.addEventListener('pointerup', function (e) {
+        e.stopPropagation();
+        arDropdown.classList.contains('open') ? closeAr() : openAr();
+      });
+
+      arBackdrop.addEventListener('pointerup', closeAr);
+
+      arOptions.forEach(function (opt) {
+        opt.addEventListener('pointerup', function (e) {
+          e.stopPropagation();
+          var ratio = opt.dataset.ratio;
+          arOptions.forEach(function (o) { o.classList.remove('selected'); });
+          opt.classList.add('selected');
+          arLabel.textContent = '(' + ratio + ')';
+          arBtn.setAttribute('aria-label', 'Aspect ratio ' + ratio);
+          closeAr();
+        });
       });
 
       /* ── Generate button ── */
