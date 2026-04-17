@@ -451,14 +451,16 @@
       });
 
       function navigate(goal) {
+        if (goal === 'content') {
+          window.location.href = 'screen3.html';
+          return;
+        }
         if (goal === 'engagement') {
           window.location.href = 'screen2.html';
           return;
         }
 
         console.log('[kiosk] selected goal:', goal);
-        // TODO: wire remaining goals to their screens
-        // window.location.href = 'screen3.html?goal=' + encodeURIComponent(goal);
 
         // Visual feedback for unimplemented goals
         const card = document.querySelector('[data-goal="' + goal + '"]');

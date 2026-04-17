@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Create Content Faster — AI Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <!-- !! FIGMA SYNC — do not remove: enables "Send to Figma" toolbar for re-capture !! -->
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple:       #a368f2;
+      --purple-light: #b27cfb;
+      --purple-bg:    #f7f0ff;
+      --grey:         #8f8d8d;
+      --grey-border:  #d9d9d9;
+      --text-dark:    #0d0d0d;
+      --text-mid:     #262626;
+      --btn-grad:     linear-gradient(131.97deg, #f03a80 15.22%, #bf084e 86.41%);
+      --font:         'Inter', system-ui, sans-serif;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #fff;
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      width: min(100vw, 700px);
+      height: 100dvh;
+      margin-inline: auto;
+      overflow: hidden;
+      background: linear-gradient(to bottom, var(--purple-bg) 0%, #ffffff 55%);
+    }
+
+    /* ── Navigation — always opaque so it stays readable above keyboard ── */
+    .nav {
+      flex: 0 0 auto;
+      position: relative;
+      height: clamp(56px, 10dvh, 88px);
+      padding-top: env(safe-area-inset-top, 0px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--purple-bg);
+      z-index: 10;
+    }
+
+    .btn-back {
+      position: absolute;
+      left: clamp(0.9rem, 4.4%, 2rem);
+      background: rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      border-radius: 50%;
+      width: clamp(38px, 6.5dvh, 56px);
+      height: clamp(38px, 6.5dvh, 56px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), background 150ms ease;
+    }
+
+    .btn-back:active { transform: scale(0.9); background: rgba(0,0,0,0.55); }
+
+    .btn-back svg {
+      width: clamp(14px, 2.5dvh, 20px);
+      height: clamp(14px, 2.5dvh, 20px);
+    }
+
+    .nav-title {
+      font-size: clamp(1.1rem, 3dvh, 2rem);
+      font-weight: 700;
+      color: var(--text-dark);
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Preview Frame — fixed 16:9, width-driven ── */
+    .preview-frame {
+      flex: 0 0 auto;
+      margin: clamp(6px, 1.2dvh, 16px) clamp(0.9rem, 3%, 1.5rem) 0;
+      aspect-ratio: 16 / 9;
+      background: #b1b1b1;
+      border-radius: clamp(14px, 2.5dvh, 24px);
+      overflow: hidden;
+      position: relative;
+      transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin 0.3s ease;
+    }
+
+    /* Keyboard open: slide frame off top and collapse it */
+    .keyboard-open .preview-frame {
+      opacity: 0;
+      max-height: 0;
+      margin-top: 0;
+      margin-bottom: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
+    }
+
+    .preview-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, #eeeeee, #f6f6f6);
+    }
+
+    /* Content zone: matches Figma inset-[27.16%_26.94%_26.82%_26.94%] */
+    .preview-content {
+      position: absolute;
+      top: 27.16%; right: 26.94%; bottom: 26.82%; left: 26.94%;
+    }
+
+    /* Upper photos strip: inset-[0_34%_43.01%_34%] within content */
+    .preview-photos-wrap {
+      position: absolute;
+      top: 0; right: 34%; bottom: 43.01%; left: 34%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-photos-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Lower label strip: inset-[68.39%_0_0_0] within content */
+    .preview-labels-wrap {
+      position: absolute;
+      top: 68.39%; right: 0; bottom: 0; left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-labels-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* ── Bottom Panel ── */
+    .bottom-panel {
+      flex: 0 0 auto;
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(8px, 1.5dvh, 14px);
+      padding: clamp(8px, 1.5dvh, 14px) clamp(0.9rem, 3%, 1.5rem);
+      padding-bottom: max(clamp(8px, 1.5dvh, 14px), env(safe-area-inset-bottom, 0px));
+    }
+
+    /* ── Tab Menu ── */
+    .tab-menu {
+      background: #fff;
+      border-radius: clamp(8px, 1.5dvh, 14px);
+      padding: clamp(4px, 0.7dvh, 7px);
+      display: flex;
+    }
+
+    .tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      border-radius: clamp(5px, 0.9dvh, 10px);
+      padding: clamp(8px, 1.6dvh, 15px) clamp(10px, 1.8dvh, 18px);
+      font-family: var(--font);
+      font-size: clamp(0.85rem, 2dvh, 1.5rem);
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 150ms ease;
+      color: var(--grey);
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      background: var(--purple);
+      color: var(--purple-bg);
+    }
+
+    .tab:not(.active):active { background: rgba(0,0,0,0.06); }
+
+    /* ── Prompt Box ── */
+    .prompt-box {
+      background: #fff;
+      border: 2.5px solid var(--purple-light);
+      border-radius: clamp(14px, 2.5dvh, 24px);
+      padding: clamp(14px, 2.5dvh, 24px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: clamp(110px, 23dvh, 220px);
+      box-shadow: 0 clamp(10px, 2dvh, 20px) clamp(20px, 4dvh, 44px) rgba(0, 0, 0, 0.04);
+      cursor: text;
+    }
+
+    /* Real textarea input */
+    .prompt-input {
+      width: 100%;
+      flex: 1;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: var(--font);
+      font-size: clamp(0.9rem, 2.2dvh, 1.7rem);
+      font-weight: 400;
+      color: var(--text-dark);
+      background: transparent;
+      line-height: 1.5;
+      min-height: 2em;
+      overflow: hidden;
+      /* Prevent iOS zoom on focus (font-size must be ≥ 16px) */
+      font-size: max(16px, clamp(0.9rem, 2.2dvh, 1.7rem));
+    }
+
+    .prompt-input::placeholder {
+      color: var(--grey);
+    }
+
+    .prompt-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: clamp(8px, 1.5dvh, 14px);
+    }
+
+    .btn-ai {
+      border: 2px solid var(--purple);
+      border-radius: clamp(6px, 1dvh, 10px);
+      background: transparent;
+      padding: clamp(8px, 1.4dvh, 14px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 150ms ease;
+    }
+
+    .btn-ai:active { background: rgba(163, 104, 242, 0.1); }
+
+    .btn-ai img {
+      width: clamp(20px, 3.5dvh, 34px);
+      height: clamp(20px, 3.5dvh, 34px);
+      object-fit: contain;
+    }
+
+    .prompt-right-actions {
+      display: flex;
+      gap: clamp(6px, 1.2dvh, 12px);
+    }
+
+    .btn-action {
+      border: 2px solid var(--grey-border);
+      border-radius: clamp(6px, 1dvh, 10px);
+      background: transparent;
+      padding: clamp(8px, 1.4dvh, 14px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: clamp(4px, 0.7dvh, 7px);
+      font-family: var(--font);
+      font-size: clamp(0.8rem, 1.8dvh, 1.3rem);
+      font-weight: 400;
+      color: var(--text-mid);
+      -webkit-tap-highlight-color: transparent;
+      transition: background 150ms ease;
+      white-space: nowrap;
+    }
+
+    .btn-action:active { background: rgba(0,0,0,0.05); }
+
+    .btn-action img {
+      width: clamp(16px, 3dvh, 28px);
+      height: clamp(16px, 3dvh, 28px);
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    /* ── Generate Button ── */
+    .btn-generate {
+      width: 100%;
+      border: none;
+      border-radius: clamp(8px, 1.4dvh, 14px);
+      padding: clamp(12px, 2.4dvh, 22px) clamp(16px, 3dvh, 28px);
+      background: var(--btn-grad);
+      color: #fff;
+      font-family: var(--font);
+      font-size: clamp(1rem, 2.6dvh, 2rem);
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      letter-spacing: -0.01em;
+      transition: opacity 150ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .btn-generate:active:not(:disabled) { opacity: 0.88; transform: scale(0.98); }
+
+    .btn-generate:disabled {
+      opacity: 0.38;
+      cursor: default;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="screen">
+
+    <!-- Navigation -->
+    <nav class="nav">
+      <button class="btn-back" onclick="window.location.href='index.html'" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <h1 class="nav-title">Create content faster</h1>
+    </nav>
+
+    <!-- Preview Frame -->
+    <div class="preview-frame" aria-label="AI Content Creation preview">
+      <div class="preview-bg"></div>
+      <div class="preview-content" aria-hidden="true">
+        <!-- Overlapping photo cards -->
+        <div class="preview-photos-wrap">
+          <img src="https://www.figma.com/api/mcp/asset/9a3b207b-1c7d-4633-9ad8-a555abc23828" alt="" />
+        </div>
+        <!-- AI Content Creation label + subtitle -->
+        <div class="preview-labels-wrap">
+          <img src="https://www.figma.com/api/mcp/asset/5bfd4944-9988-4ecb-97f2-4d897140a358"
+            alt="AI Content Creation — Generate content with latest AI model" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Panel -->
+    <div class="bottom-panel">
+
+      <!-- Tab Menu -->
+      <div class="tab-menu" role="tablist" aria-label="Generation mode">
+        <button class="tab active" role="tab" aria-selected="true" data-tab="image">Text to Image</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="video">Text to Video</button>
+      </div>
+
+      <!-- Prompt Box -->
+      <div class="prompt-box" id="prompt-box">
+        <textarea
+          id="prompt-input"
+          class="prompt-input"
+          placeholder="Enter prompt (optional)"
+          rows="1"
+          autocomplete="off"
+          autocorrect="on"
+          spellcheck="true"
+        ></textarea>
+        <div class="prompt-actions">
+          <!-- AI assist — purple border, Figma pen+sparkle icon -->
+          <button class="btn-ai" aria-label="AI assist">
+            <img src="https://www.figma.com/api/mcp/asset/aca0f02b-bd70-411c-a582-37ce7c81991e" alt="" aria-hidden="true" />
+          </button>
+          <!-- Right actions -->
+          <div class="prompt-right-actions">
+            <button class="btn-action" aria-label="Aspect ratio 16:9">
+              <img src="https://www.figma.com/api/mcp/asset/5a036900-c76e-465d-8d7a-8dcbbe831aa4" alt="" aria-hidden="true" />
+              <span>(16:9)</span>
+            </button>
+            <button class="btn-action" aria-label="Styles">
+              <img src="https://www.figma.com/api/mcp/asset/95cf1d35-a74a-4033-90b8-baceab107ec2" alt="" aria-hidden="true" />
+              <span>Styles</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generate Button -->
+      <button class="btn-generate" id="btn-generate" disabled>Generate Content</button>
+
+    </div>
+  </div><!-- /.screen -->
+
+  <script>
+    (function () {
+      'use strict';
+
+      var screen      = document.querySelector('.screen');
+      var textarea    = document.getElementById('prompt-input');
+      var promptBox   = document.getElementById('prompt-box');
+      var bottomPanel = document.querySelector('.bottom-panel');
+      var generateBtn = document.getElementById('btn-generate');
+
+      /* ── Tab switching ── */
+      var tabs = document.querySelectorAll('.tab');
+      tabs.forEach(function (tab) {
+        tab.addEventListener('pointerup', function () {
+          tabs.forEach(function (t) {
+            t.classList.remove('active');
+            t.setAttribute('aria-selected', 'false');
+          });
+          tab.classList.add('active');
+          tab.setAttribute('aria-selected', 'true');
+        });
+      });
+
+      /* ── Tap prompt box to focus textarea ── */
+      promptBox.addEventListener('pointerup', function (e) {
+        if (e.target !== textarea) textarea.focus();
+      });
+
+      /* ── Auto-resize textarea + toggle generate button ── */
+      function resizeTextarea() {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+        generateBtn.disabled = textarea.value.trim() === '';
+      }
+      textarea.addEventListener('input', resizeTextarea);
+
+      /* ── Keyboard detection via visualViewport ── */
+      function applyKeyboardOffset() {
+        if (!window.visualViewport) return;
+        var vv = window.visualViewport;
+        // Keyboard height = gap between layout viewport and visual viewport
+        var keyboardHeight = window.innerHeight - (vv.offsetTop + vv.height);
+        if (keyboardHeight > 80) {
+          screen.classList.add('keyboard-open');
+          // Pin bottom panel above the keyboard
+          bottomPanel.style.marginBottom = keyboardHeight + 'px';
+        } else {
+          screen.classList.remove('keyboard-open');
+          bottomPanel.style.marginBottom = '';
+        }
+      }
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', applyKeyboardOffset);
+        window.visualViewport.addEventListener('scroll', applyKeyboardOffset);
+      }
+
+      /* ── Fallback: focus/blur events ── */
+      textarea.addEventListener('focus', function () {
+        screen.classList.add('keyboard-open');
+        // Allow animation to start, then ensure textarea is in view
+        setTimeout(function () {
+          textarea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      });
+
+      textarea.addEventListener('blur', function () {
+        // Only remove if visualViewport confirms keyboard is gone
+        // (or if visualViewport is unavailable)
+        if (!window.visualViewport) {
+          screen.classList.remove('keyboard-open');
+          bottomPanel.style.marginBottom = '';
+          return;
+        }
+        setTimeout(function () {
+          var kb = window.innerHeight - (window.visualViewport.offsetTop + window.visualViewport.height);
+          if (kb <= 80) {
+            screen.classList.remove('keyboard-open');
+            bottomPanel.style.marginBottom = '';
+          }
+        }, 100);
+      });
+
+      /* ── Generate button ── */
+      generateBtn.addEventListener('pointerup', function () {
+        var prompt = textarea.value.trim();
+        var tab    = document.querySelector('.tab.active').dataset.tab;
+        console.log('[kiosk] generate:', tab, '|', prompt || '(no prompt)');
+        textarea.blur();
+      });
+
+    })();
+  </script>
+</body>
+</html>
