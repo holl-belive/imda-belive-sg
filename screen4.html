@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Drive Conversions — AI Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- !! FIGMA SYNC — do not remove: enables "Send to Figma" toolbar for re-capture !! -->
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:  #DB0B5B;
+      --bg:      #0d0d0d;
+      --font:    'Inter', system-ui, sans-serif;
+      --h-nav:   clamp(64px, 12dvh, 100px);
+      --h-end:   clamp(60px, 11dvh, 90px);
+      --h-ctrl:  clamp(90px, 19dvh, 160px);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ── Screen wrapper ── */
+    .screen {
+      position: relative;
+      width: min(100vw, 700px);
+      height: 100dvh;
+      margin-inline: auto;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* ── Full-screen gradient: pink at top → transparent at 50% ── */
+    .bg-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, #db0b5b 0%, rgba(13,13,13,0) 50%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Avatar — sits between nav and controller ── */
+    .avatar-wrap {
+      position: absolute;
+      top: var(--h-nav);
+      left: 0;
+      right: 0;
+      bottom: calc(var(--h-end) + var(--h-ctrl));
+      z-index: 2;
+      overflow: hidden;
+    }
+
+    .avatar-wrap img {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 100%;
+      width: auto;
+    }
+
+    /* ── Chat conversation — direct child of .screen so overflow: hidden on
+       avatar-wrap never blocks touch-scroll ── */
+    .chat-area {
+      position: absolute;
+      top: var(--h-nav);
+      left: 0;
+      right: 0;
+      bottom: calc(var(--h-end) + var(--h-ctrl));
+      z-index: 3;          /* above avatar (2), below nav/pills/ctrl (5+) */
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: clamp(6px, 1dvh, 10px);
+      padding: 0 0 clamp(12px, 2dvh, 20px);
+      /* fade top edge so avatar bleeds through */
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 22%);
+      mask-image: linear-gradient(to bottom, transparent 0%, black 22%);
+      /* hidden until speaking */
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+
+    .chat-area::-webkit-scrollbar { display: none; }
+
+    /* Spacer grows when content is short (anchors msgs to bottom);
+       collapses to 0 when content overflows so scroll works normally */
+    .chat-spacer { flex: 1 0 0; }
+
+    .screen.speaking .chat-area {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Row wrappers match Figma: AI left-weighted, user right-weighted */
+    .bubble-row-ai {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-left:  clamp(12px, 4.4%, 48px);
+      padding-right: clamp(12px, 19%, 208px);
+      flex-shrink: 0;
+    }
+
+    .bubble-row-user {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      padding-left:  clamp(12px, 24%, 256px);
+      padding-right: clamp(12px, 4.4%, 48px);
+      flex-shrink: 0;
+    }
+
+    /* AI bubble: frosted, small bottom-left radius */
+    .bubble-ai {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: clamp(16px, 3dvh, 36px) clamp(16px, 3dvh, 36px) clamp(16px, 3dvh, 36px) clamp(4px, 0.7dvh, 10px);
+      padding: clamp(10px, 1.8dvh, 24px) clamp(16px, 3dvh, 36px);
+      font-size: clamp(0.82rem, 1.8dvh, 1.25rem);
+      font-weight: 400;
+      color: #222529;
+      line-height: 1.5;
+    }
+
+    .bubble-ai ol {
+      padding-left: clamp(16px, 2.5dvh, 24px);
+      margin: 0.3em 0;
+    }
+
+    /* User bubble: pink, small bottom-right radius */
+    .bubble-user {
+      background: var(--accent);
+      border-radius: clamp(16px, 3dvh, 36px) clamp(16px, 3dvh, 36px) clamp(4px, 0.7dvh, 10px) clamp(16px, 3dvh, 36px);
+      padding: clamp(8px, 1.4dvh, 16px) clamp(14px, 2.4dvh, 24px);
+      font-size: clamp(0.82rem, 1.8dvh, 1.25rem);
+      font-weight: 400;
+      color: #fff;
+      line-height: 1.5;
+    }
+
+    /* ── Navigation bar ── */
+    .nav-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--h-nav);
+      padding-top: env(safe-area-inset-top, 0px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .btn-back {
+      position: absolute;
+      left: clamp(0.9rem, 4.4%, 1.8rem);
+      background: rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      border-radius: 50%;
+      width: clamp(38px, 6.5dvh, 56px);
+      height: clamp(38px, 6.5dvh, 56px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), background 150ms ease;
+    }
+
+    .btn-back:active { transform: scale(0.9); background: rgba(0,0,0,0.55); }
+
+    .btn-back svg {
+      width: clamp(14px, 2.5dvh, 20px);
+      height: clamp(14px, 2.5dvh, 20px);
+    }
+
+    .nav-title {
+      font-size: clamp(1.1rem, 3dvh, 2rem);
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Suggested questions pills bar ── */
+    .suggestions-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(var(--h-end) + var(--h-ctrl));
+      display: flex;
+      gap: clamp(8px, 1.5dvh, 14px);
+      align-items: center;
+      padding: clamp(10px, 1.8dvh, 16px) clamp(16px, 3%, 24px);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      background: rgba(255, 255, 255, 0.55);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+      overflow-x: auto;
+      scrollbar-width: none;
+      z-index: 5;
+    }
+
+    .suggestions-bar::-webkit-scrollbar { display: none; }
+
+    .suggestion-pill {
+      flex-shrink: 0;
+      border: 2px solid var(--accent);
+      border-radius: 100px;
+      padding: clamp(7px, 1.3dvh, 12px) clamp(14px, 2.5dvh, 20px);
+      background: transparent;
+      color: var(--accent);
+      font-family: var(--font);
+      font-size: clamp(0.78rem, 1.7dvh, 1.3rem);
+      font-weight: 500;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 150ms ease;
+      white-space: nowrap;
+    }
+
+    .suggestion-pill:active { background: rgba(219, 11, 91, 0.1); }
+
+    /* ── Controller bar ── */
+    .controller-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: var(--h-end);
+      height: var(--h-ctrl);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: clamp(10px, 1.5dvh, 18px) clamp(16px, 4%, 40px);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      background: rgba(255, 255, 255, 0.55);
+      z-index: 5;
+    }
+
+    /* ── Language selector ── */
+    .lang-selector {
+      display: flex;
+      align-items: center;
+      gap: clamp(5px, 0.9dvh, 10px);
+      border: none;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(9px);
+      -webkit-backdrop-filter: blur(9px);
+      border-radius: 8px;
+      padding: clamp(6px, 1dvh, 10px) clamp(10px, 1.8dvh, 18px);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 150ms ease;
+      user-select: none;
+    }
+
+    .lang-selector:active { background: rgba(255, 255, 255, 0.95); }
+
+    .lang-selector.invisible {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .lang-selector svg {
+      flex-shrink: 0;
+      width: clamp(20px, 3dvh, 30px);
+      height: clamp(20px, 3dvh, 30px);
+    }
+
+    .lang-selector .lang-text {
+      font-size: clamp(0.85rem, 1.8dvh, 1.4rem);
+      font-weight: 400;
+      color: #222529;
+      white-space: nowrap;
+    }
+
+    /* ── Mic / stop button area ── */
+    .speaking-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(4px, 0.6dvh, 7px);
+    }
+
+    /* ── Mic / Stop button — CSS circle + inline SVG icons ── */
+    .mic-btn {
+      position: relative;
+      width: clamp(64px, 11dvh, 96px);
+      height: clamp(64px, 11dvh, 96px);
+      border: none;
+      border-radius: 50%;
+      background: #3B82F6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 0 0 clamp(5px, 0.9dvh, 10px) rgba(59, 130, 246, 0.25);
+      transition:
+        background  250ms ease,
+        box-shadow  250ms ease,
+        transform   150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .mic-btn:active { transform: scale(0.93); }
+
+    .screen.speaking .mic-btn {
+      background: var(--accent);
+      box-shadow: 0 0 0 clamp(5px, 0.9dvh, 10px) rgba(219, 11, 91, 0.25);
+    }
+
+    /* Both icons sit centered, one visible at a time */
+    .mic-btn svg {
+      position: absolute;
+      width: 46%;
+      height: 46%;
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+
+    .icon-mic  { opacity: 1; transform: scale(1); }
+    .icon-stop { opacity: 0; transform: scale(0.5); }
+
+    .screen.speaking .icon-mic  { opacity: 0; transform: scale(0.5); }
+    .screen.speaking .icon-stop { opacity: 1; transform: scale(1); }
+
+    .speaking-label {
+      font-size: clamp(0.72rem, 1.5dvh, 1.1rem);
+      font-weight: 500;
+      color: #222529;
+      white-space: nowrap;
+    }
+
+    /* ── End Conversation bar ── */
+    .end-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--h-end);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-left: clamp(16px, 4%, 48px);
+      padding-right: clamp(16px, 4%, 48px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      z-index: 5;
+    }
+
+    .btn-end {
+      border: none;
+      background: transparent;
+      font-family: var(--font);
+      font-size: clamp(1rem, 2.8dvh, 2rem);
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      letter-spacing: -0.02em;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 150ms ease;
+    }
+
+    .btn-end:active { opacity: 0.65; }
+  </style>
+</head>
+
+<body>
+  <div class="screen" id="screen">
+
+    <!-- Full-screen gradient (pink top → transparent) -->
+    <div class="bg-gradient" aria-hidden="true"></div>
+
+    <!-- AI Avatar -->
+    <div class="avatar-wrap" aria-hidden="true">
+      <img src="https://www.figma.com/api/mcp/asset/94806f7f-9d8d-4681-9a34-9e94be45906a" alt="" />
+    </div>
+
+    <!-- Chat conversation — sibling of avatar-wrap so parent overflow:hidden
+         never blocks touch scroll -->
+    <div class="chat-area" id="chat-area" aria-live="polite">
+      <!-- Spacer: grows when msgs are short (pins to bottom); collapses on overflow -->
+      <div class="chat-spacer"></div>
+      <div class="bubble-row-ai">
+        <div class="bubble-ai">Hello, welcome to IMDA Pixel Exhibition, how may I help you today!</div>
+      </div>
+      <div class="bubble-row-user">
+        <div class="bubble-user">I'm from retail, looking for AI solutions.</div>
+      </div>
+      <div class="bubble-row-ai">
+        <div class="bubble-ai">
+          Great — I'll tailor this for you.<br>
+          Here are 3 companies at PIXEL working on retail AI:
+          <ol>
+            <li>Customer engagement &amp; avatars</li>
+            <li>Inventory &amp; analytics</li>
+            <li>Personalization engines</li>
+          </ol>
+          Would you like a guided route or a quick overview of one?
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav-bar">
+      <button class="btn-back" onclick="window.location.href='index.html'" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <h1 class="nav-title">Drive conversions</h1>
+    </nav>
+
+    <!-- Suggested questions -->
+    <div class="suggestions-bar" role="group" aria-label="Suggested questions">
+      <button class="suggestion-pill">I have a headache. What should I do?</button>
+      <button class="suggestion-pill">I have a fever. Is it serious?</button>
+    </div>
+
+    <!-- Controller -->
+    <div class="controller-bar" role="region" aria-label="Voice controls">
+
+      <!-- Left language selector (invisible for layout balance) -->
+      <div class="lang-selector invisible" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#222529" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span class="lang-text">English</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#222529" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round"
+             style="width:clamp(14px,1.8dvh,22px);height:clamp(14px,1.8dvh,22px);">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+
+      <!-- Mic / Stop button -->
+      <div class="speaking-area">
+        <button class="mic-btn" id="mic-btn" aria-label="Tap to start speaking">
+          <!-- Microphone icon (idle) -->
+          <svg class="icon-mic" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="8.5" y="2" width="7" height="12" rx="3.5" fill="white"/>
+            <path d="M5 11c0 3.866 3.134 7 7 7s7-3.134 7-7" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+            <line x1="12" y1="18" x2="12" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <line x1="8" y1="22" x2="16" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <!-- Stop icon (speaking) -->
+          <svg class="icon-stop" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="5" width="14" height="14" rx="3" fill="white"/>
+          </svg>
+        </button>
+        <span class="speaking-label" id="speaking-label">Tap to start speaking</span>
+      </div>
+
+      <!-- Right language selector -->
+      <button class="lang-selector" aria-label="Language: English">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#222529" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span class="lang-text">English</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#222529" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+             style="width:clamp(14px,1.8dvh,22px);height:clamp(14px,1.8dvh,22px);">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+    </div>
+
+    <!-- End Conversation -->
+    <div class="end-bar">
+      <button class="btn-end" onclick="window.location.href='index.html'">End Conversation</button>
+    </div>
+
+  </div><!-- /.screen -->
+
+  <script>
+    (function () {
+      'use strict';
+
+      var screen   = document.getElementById('screen');
+      var micBtn   = document.getElementById('mic-btn');
+      var label    = document.getElementById('speaking-label');
+      var chatArea = document.getElementById('chat-area');
+      var speaking = false;
+
+      micBtn.addEventListener('pointerup', function (e) {
+        e.stopPropagation();
+        speaking = !speaking;
+
+        if (speaking) {
+          screen.classList.add('speaking');
+          label.textContent = 'Tap to finish speaking';
+          micBtn.setAttribute('aria-label', 'Tap to finish speaking');
+          // scroll chat to bottom after transition starts
+          setTimeout(function () {
+            chatArea.scrollTop = chatArea.scrollHeight;
+          }, 50);
+        } else {
+          screen.classList.remove('speaking');
+          label.textContent = 'Tap to start speaking';
+          micBtn.setAttribute('aria-label', 'Tap to start speaking');
+        }
+      });
+
+      document.querySelectorAll('.suggestion-pill').forEach(function (pill) {
+        pill.addEventListener('pointerup', function () {
+          console.log('[kiosk] suggestion:', pill.textContent.trim());
+        });
+      });
+
+    })();
+  </script>
+</body>
+</html>
